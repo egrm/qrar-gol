@@ -3,6 +3,8 @@
     <meta charset="utf-8" />
     <title>QR AR GoL</title>
     <script src="./jsQR.js"></script>
+    <!--script src="https://enkimute.github.io/res/linalg.min.js"></script-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
     <link
       href="https://fonts.googleapis.com/css?family=Ropa+Sans"
       rel="stylesheet"
@@ -28,7 +30,18 @@
       }
 
       #canvas {
-        width: 100%;
+        height: 40vh;
+        /* width: 100%; */
+      }
+      #gol-canvas {
+        height: 40vh;
+        position: absolute;
+        background: red;
+        left: 0;
+        top: 0;
+        transform-origin: 0 0;
+        outline: 1px solid transparent !important;
+        -webkit-backface-visibility: hidden;
       }
 
       #output {
@@ -82,8 +95,53 @@
         canvas.stroke();
       }
 
+      function drawCircle(x, y, r, color) {
+        canvas.beginPath();
+        canvas.arc(x, y, r, 0, 2 * Math.PI);
+        canvas.strokeStyle = color;
+        canvas.stroke();
+      }
+
+      function getTransform(from, to) {
+        const A = [];
+        const b = [];
+        for (let i = 0; i < 4; i++) {
+          A.push([from[i].x, from[i].y, 1, 0, 0, 0, -from[i].x * to[i].x, -from[i].y * to[i].x]);
+          A.push([0, 0, 0, from[i].x, from[i].y, 1, -from[i].x * to[i].y, -from[i].y * to[i].y]);
+
+          b.push(to[i].x);
+          b.push(to[i].y);
+        }
+        return numeric.solve(A, b);
+      }
+
+      function lineIntersection(location) {
+        const { x: line1StartX, y: line1StartY } = location.topRightCorner;
+        const { x: line1EndX, y: line1EndY } = location.bottomLeftCorner;
+        const { x: line2StartX, y: line2StartY } = location.bottomRightCorner;
+        const { x: line2EndX, y: line2EndY } = location.topLeftCorner;
+        let denominator, a, b, numerator1, numerator2, result = {
+            x: null,
+            y: null
+        };
+        denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY));
+        if (denominator == 0) {
+            return result;
+        }
+        a = line1StartY - line2StartY;
+        b = line1StartX - line2StartX;
+        numerator1 = ((line2EndX - line2StartX) * a) - ((line2EndY - line2StartY) * b);
+        numerator2 = ((line1EndX - line1StartX) * a) - ((line1EndY - line1StartY) * b);
+        a = numerator1 / denominator;
+        b = numerator2 / denominator;
+
+        result.x = line1StartX + (a * (line1EndX - line1StartX));
+        result.y = line1StartY + (a * (line1EndY - line1StartY));
+
+        return result;
+      };
       // Use facingMode: environment to attemt to get the front camera on phones
-      navigator.mediaDevices.getUserMedia({ video }).then(function(stream) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
         video.srcObject = stream;
         video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
         video.play();
@@ -118,6 +176,7 @@
           if (code) {
             if (!continuing) initMatrix(code);
             continuing = true;
+            // Sides
             drawLine(
               code.location.topLeftCorner,
               code.location.topRightCorner,
@@ -138,10 +197,48 @@
               code.location.topLeftCorner,
               "#FF3B58"
             );
+            // Diagonals
+            drawLine(
+              code.location.bottomRightCorner,
+              code.location.topLeftCorner,
+              "#00FF00"
+            );
+            drawLine(
+              code.location.bottomLeftCorner,
+              code.location.topRightCorner,
+              "#00FF00"
+            );
+            // Center
+            const center = lineIntersection(code.location);
+            drawCircle(center.x, center.y, 5, "#0000FF");
+
+            // Solve for matrix3d() transform
+            const golCanvasElement = document.getElementById('gol-canvas');
+            const { offsetWidth: W, offsetHeight: H } = golCanvasElement;
+            const F = 1; // TODO: what is this mysterious factor???
+            const h = getTransform([
+              {x: 0, y: 0},
+              {x: W*F, y: 0},
+              {x: 0, y: H*F},
+              {x: W*F, y: H*F}
+            ], [
+              code.location.topLeftCorner,
+              code.location.topRightCorner,
+              code.location.bottomLeftCorner,
+              code.location.bottomRightCorner
+            ]);
+            golCanvasElement.style.transform = `matrix3d(
+              ${h[0]}, ${h[3]}, 0, ${h[6]}, 
+              ${h[1]}, ${h[4]}, 0, ${h[7]},
+              0, 0, 1, 0,
+              ${h[2]}, ${h[5]}, 0, 1
+            )`;
+
             outputMessage.hidden = true;
             outputData.parentElement.hidden = false;
             outputData.innerText = code.data;
           } else {
+            console.log('no code');
             continuing = false;
 
             outputMessage.hidden = false;

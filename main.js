@@ -1,14 +1,14 @@
 // img
 
-const extractImageDataFromImg = imgEl => {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
+// const extractImageDataFromImg = imgEl => {
+//   const canvas = document.createElement("canvas");
+//   const context = canvas.getContext("2d");
 
-  canvas.width = imgEl.width;
-  canvas.height = imgEl.height;
-  context.drawImage(imgEl, 0, 0);
-  return context.getImageData(0, 0, imgEl.width, imgEl.height);
-};
+//   canvas.width = imgEl.width;
+//   canvas.height = imgEl.height;
+//   context.drawImage(imgEl, 0, 0);
+//   return context.getImageData(0, 0, imgEl.width, imgEl.height);
+// };
 
 // const img = window.document.getElementById("qr-img");
 // const img = document.getElementById("big-qr-img");
@@ -34,8 +34,6 @@ function initMatrix(code) {
   matrix.getByCoords = function(x, y) {
     const index = this.coordsToIndex(x, y);
     const value = this.data[index];
-
-    // console.log(x, y, index, value);
 
     return value;
   };
@@ -115,5 +113,5 @@ function initMatrix(code) {
   setInterval(() => {
     renderMatrix(matrix);
     matrix.nextGen();
-  }, 100);
+  }, 150);
 }
