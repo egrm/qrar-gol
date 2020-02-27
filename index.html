@@ -30,13 +30,13 @@
       }
 
       #canvas {
-        height: 40vh;
+        /* height: 40vh; */
         /* width: 100%; */
       }
       #gol-canvas {
-        height: 40vh;
+        /* height: 40vh; */
         position: absolute;
-        background: red;
+        background: white;
         left: 0;
         top: 0;
         transform-origin: 0 0;
@@ -76,7 +76,7 @@
     <script src="main.js"></script>
 
     <script>
-      let continuing = false;
+      let toleranceTicks = 0;
 
       var video = document.createElement("video");
       var canvasElement = document.getElementById("canvas");
@@ -105,6 +105,7 @@
       function getTransform(from, to) {
         const A = [];
         const b = [];
+
         for (let i = 0; i < 4; i++) {
           A.push([from[i].x, from[i].y, 1, 0, 0, 0, -from[i].x * to[i].x, -from[i].y * to[i].x]);
           A.push([0, 0, 0, from[i].x, from[i].y, 1, -from[i].x * to[i].y, -from[i].y * to[i].y]);
@@ -112,6 +113,7 @@
           b.push(to[i].x);
           b.push(to[i].y);
         }
+        
         return numeric.solve(A, b);
       }
 
@@ -174,48 +176,15 @@
             inversionAttempts: "dontInvert"
           });
           if (code) {
-            if (!continuing) initMatrix(code);
-            continuing = true;
-            // Sides
-            drawLine(
-              code.location.topLeftCorner,
-              code.location.topRightCorner,
-              "#FF3B58"
-            );
-            drawLine(
-              code.location.topRightCorner,
-              code.location.bottomRightCorner,
-              "#FF3B58"
-            );
-            drawLine(
-              code.location.bottomRightCorner,
-              code.location.bottomLeftCorner,
-              "#FF3B58"
-            );
-            drawLine(
-              code.location.bottomLeftCorner,
-              code.location.topLeftCorner,
-              "#FF3B58"
-            );
-            // Diagonals
-            drawLine(
-              code.location.bottomRightCorner,
-              code.location.topLeftCorner,
-              "#00FF00"
-            );
-            drawLine(
-              code.location.bottomLeftCorner,
-              code.location.topRightCorner,
-              "#00FF00"
-            );
-            // Center
-            const center = lineIntersection(code.location);
-            drawCircle(center.x, center.y, 5, "#0000FF");
+            if (!toleranceTicks) mountGoL(code);
+
+            toleranceTicks = 7;
 
             // Solve for matrix3d() transform
             const golCanvasElement = document.getElementById('gol-canvas');
-            const { offsetWidth: W, offsetHeight: H } = golCanvasElement;
+            const { width: W, height: H } = golCanvasElement;
             const F = 1; // TODO: what is this mysterious factor???
+
             const h = getTransform([
               {x: 0, y: 0},
               {x: W*F, y: 0},
@@ -227,6 +196,7 @@
               code.location.bottomLeftCorner,
               code.location.bottomRightCorner
             ]);
+
             golCanvasElement.style.transform = `matrix3d(
               ${h[0]}, ${h[3]}, 0, ${h[6]}, 
               ${h[1]}, ${h[4]}, 0, ${h[7]},
@@ -239,7 +209,10 @@
             outputData.innerText = code.data;
           } else {
             console.log('no code');
-            continuing = false;
+            toleranceTicks = Math.max(toleranceTicks - 1, 0);
+
+            if (!toleranceTicks) dismountGoL();
+
 
             outputMessage.hidden = false;
             outputData.parentElement.hidden = true;

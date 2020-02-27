@@ -1,4 +1,6 @@
 // img
+  const golCanvas = document.querySelector("#gol-canvas");
+  golCanvas.hidden = true;
 
 // const extractImageDataFromImg = imgEl => {
 //   const canvas = document.createElement("canvas");
@@ -19,10 +21,10 @@
 //   inversionAttempts: "dontInvert"
 // });
 
-let matrix;
+let golInterval;
 
-function initMatrix(code) {
-  matrix = code.matrix;
+function mountGoL(code) {
+  const matrix = code.matrix;
 
   matrix.coordsToIndex = function(x, y) {
     if (x < 0 || y < 0) return -1;
@@ -77,14 +79,13 @@ function initMatrix(code) {
     this.data = newData;
   };
 
-  const canvas = document.querySelector("#gol-canvas");
-  const ctx = canvas.getContext("2d");
+  const ctx = golCanvas.getContext("2d");
 
   function renderMatrix(matrix) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, golCanvas.width, golCanvas.height);
 
-    const cellHeight = canvas.height / matrix.height;
-    const cellWidth = canvas.width / matrix.width;
+    const cellHeight = golCanvas.height / matrix.height;
+    const cellWidth = golCanvas.width / matrix.width;
 
     for (let row = 0; row < matrix.height; row++) {
       for (let col = 0; col < matrix.width; col++) {
@@ -102,16 +103,15 @@ function initMatrix(code) {
   }
 
   renderMatrix(matrix);
+  golCanvas.hidden = false;
 
-  document.body.onkeypress = e => {
-    if (event.code === "Space") {
-      matrix.nextGen();
-      renderMatrix(matrix);
-    }
-  };
-
-  setInterval(() => {
+  golInterval = setInterval(() => {
     renderMatrix(matrix);
     matrix.nextGen();
   }, 150);
+}
+
+function dismountGoL() {
+  clearInterval(golInterval)
+  golCanvas.hidden = true;
 }
