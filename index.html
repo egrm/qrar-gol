@@ -10,11 +10,16 @@
       rel="stylesheet"
     />
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
       body {
         font-family: "Ropa Sans", sans-serif;
         color: #333;
         max-width: 640px;
-        margin: 0 auto;
+        /* margin: 0 auto; */
         position: relative;
       }
 
@@ -29,10 +34,6 @@
         background-color: #eee;
       }
 
-      #canvas {
-        /* height: 40vh; */
-        /* width: 100%; */
-      }
       #gol-canvas {
         /* height: 40vh; */
         position: absolute;
@@ -43,22 +44,6 @@
         outline: 1px solid transparent !important;
         -webkit-backface-visibility: hidden;
       }
-
-      #output {
-        margin-top: 20px;
-        background: #eee;
-        padding: 10px;
-        padding-bottom: 0;
-      }
-
-      #output div {
-        padding-bottom: 10px;
-        word-wrap: break-word;
-      }
-
-      #noQRFound {
-        text-align: center;
-      }
     </style>
   </head>
   <body>
@@ -67,24 +52,20 @@
       enabled)
     </div>
     <canvas id="canvas" hidden></canvas>
-    <div id="output" hidden>
-      <div id="outputMessage">No QR code detected.</div>
-      <div hidden><b>Data:</b> <span id="outputData"></span></div>
-    </div>
     <canvas id="gol-canvas" height="400" width="400"></canvas>
 
     <script src="main.js"></script>
 
     <script>
+      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+      
       let toleranceTicks = 0;
 
       var video = document.createElement("video");
       var canvasElement = document.getElementById("canvas");
       var canvas = canvasElement.getContext("2d");
       var loadingMessage = document.getElementById("loadingMessage");
-      var outputContainer = document.getElementById("output");
-      var outputMessage = document.getElementById("outputMessage");
-      var outputData = document.getElementById("outputData");
 
       function drawLine(begin, end, color) {
         canvas.beginPath();
@@ -155,7 +136,6 @@
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
           loadingMessage.hidden = true;
           canvasElement.hidden = false;
-          outputContainer.hidden = false;
 
           canvasElement.height = video.videoHeight;
           canvasElement.width = video.videoWidth;
@@ -204,18 +184,12 @@
               ${h[2]}, ${h[5]}, 0, 1
             )`;
 
-            outputMessage.hidden = true;
-            outputData.parentElement.hidden = false;
-            outputData.innerText = code.data;
           } else {
-            console.log('no code');
             toleranceTicks = Math.max(toleranceTicks - 1, 0);
 
             if (!toleranceTicks) dismountGoL();
 
 
-            outputMessage.hidden = false;
-            outputData.parentElement.hidden = true;
           }
         }
         requestAnimationFrame(tick);
